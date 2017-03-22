@@ -1,0 +1,76 @@
+std::vector<int> mobiusConquer(std::vector<int> field, std::vector<int> ratiorg, std::vector<int> enemy, std::vector<std::vector<int>> impassableCells) {
+    vector<int> re(2,0);
+    vector<vector<vector<bool>>> impassable(2,
+                    vector<vector<bool>>(field[0],vector<bool>(field[1],false)));
+    vector<vector<vector<vector<int>>>> dist(2,
+                vector<vector<vector<int>>>(2,vector<vector<int>>(field[0],vector<int>(field[1],-1))));
+    //4d array: 1st dimension represents the player, where 0 = ratiorg and 1 = enemy
+    //2nd dimension represents the two sides of the strip
+    //3rd represents height, and 4th represents width
+    
+    for(int i=0;i<impassableCells.size();i++){
+        vector<int> cur=impassableCells[i];
+        impassable[cur[0]][cur[1]][cur[2]]=true;
+    }
+    for(int player=0;player<2;player++){
+        vector<vector<int>> toBeVisited;
+        int cur_d=-1;
+        if(player==0)
+            toBeVisited.push_back(ratiorg);
+        else
+            toBeVisited.push_back(enemy);
+        //BFS
+        while(toBeVisited.size()!=0){
+            vector<vector<int>>tmp;
+            cur_d++;
+            for(int i=0;i<toBeVisited.size();i++){
+                vector<int> cur=toBeVisited[i];
+                if(dist[player][cur[0]][cur[1]][cur[2]]==-1){
+                    dist[player][cur[0]][cur[1]][cur[2]]=cur_d;
+                    vector<vector<int>> direction{{-1,0},{1,0},{0,-1},{0,1}};
+                    for(int j=0;j<direction.size();j++){
+                        vector<int> next=isPossible(cur,direction[j],field,player,dist,impassable);
+                        if(next!=vector<int>{-1,-1,-1}){
+                            tmp.push_back(next);
+                        }
+                    }
+                }
+            }
+            toBeVisited=tmp;
+        }//end BFS 
+    }
+    //compare two players
+    for(int i=0;i<2;i++){
+        for(int j=0;j<field[0];j++){
+            for(int k=0;k<field[1];k++){
+                if(dist[0][i][j][k]!=-1 && dist[1][i][j][k]!=-1){
+                    if(dist[0][i][j][k]<dist[1][i][j][k])
+                        re[0]++;
+                    else if(dist[0][i][j][k]>dist[1][i][j][k])
+                        re[1]++;
+                }else if(dist[0][i][j][k]!=-1 && dist[1][i][j][k]==-1){
+                    re[0]++;
+                }else if(dist[0][i][j][k]==-1 && dist[1][i][j][k]!=-1){
+                    re[1]++;
+                }
+            }
+        }
+    }
+    return re;
+}
+vector<int> isPossible(vector<int> cur, vector<int> move, vector<int> field, int player, auto& dist, auto& impassable){
+    cur[1]+=move[0];
+    cur[2]+=move[1];
+    if(cur[1]==-1 || cur[1]==field[0])
+        return {-1,-1,-1};
+    if(cur[2]==-1){
+        cur[0]=(cur[0]+1)%2;
+        cur[2]=field[1]-1;
+    }else if(cur[2]==field[1]){
+        cur[0]=(cur[0]+1)%2;
+        cur[2]=0;
+    }if(dist[player][cur[0]][cur[1]][cur[2]]!=-1 || impassable[cur[0]][cur[1]][cur[2]])
+        return {-1,-1,-1};
+    else 
+        return cur;
+}
